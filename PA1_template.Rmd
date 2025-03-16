@@ -1,14 +1,21 @@
 ---
 title: 'Reproducible Research: Peer Assessment 1'
+author: 'Cole Yorston'
+date: "`r Sys.Date()`"
 output:
+  pdf_document: default
   html_document:
     keep_md: true
-  pdf_document: default
 ---
 
+```{r setup, include=FALSE}
+ knitr::opts_chunk$set(echo = TRUE)
+ ```
+ 
 
 ## Loading and preprocessing the data
 
+ ```{r}
 library(knitr)
 library(ggplot2)
 library(tinytex)
@@ -20,37 +27,41 @@ if (!file.exists('activity.csv')) {
 activity <- read.csv('activity.csv');
 summary(activity)
 activity$date <- as.Date(activity$date, format = "%Y-%m-%d")
-activity_no_NA <- activity[with(activity, { !(is.na(steps)) } ), ]
-steps_day <- aggregate(steps ~ date, activity_no_NA, sum)
-hist(steps_day$steps, col="grey", xlab = "Number of Steps", main= "Total Steps Taken Each Day")
+activity_no_nulls <- activity[with(activity, { !(is.na(steps)) } ), ]
+steps_by_day <- aggregate(steps ~ date, activity_no_nulls, sum)
+hist(steps_by_day$steps, col="grey", xlab = "Number of Steps Taken", main= "Total Steps Taken by Day")
+
+```
 
 # Imported libraries and assessed NA values, file is unzipped
 
 ## What is mean total number of steps taken per day?
 
-mean(steps_day$steps)
-median(steps_day$steps)
+```{r}
+mean(steps_by_day$steps)
+median(steps_by_day$steps)
 
 # Mean value is determined here. 
+```
 
 ## What is the average daily activity pattern?
-
+```{r}
 avg_steps_interval <- aggregate(steps ~ interval, activity, mean)
 plot(avg_steps_interval$interval, avg_steps_interval$steps, type='l', col=1, main="Average Steps per Day by Interval", xlab="Time Intervals", ylab="Average number of steps")
 interval_max <- which.max(avg_steps_interval$steps)
-interval_max_i <- avg_steps_interval[interval_max, ]$interval
-interval_max_s <- round(avg_steps_interval[interval_max, ]$step)
+interval_max_ <- avg_steps_interval[interval_max, ]$interval
+interval_max__ <- round(avg_steps_interval[interval_max, ]$step)
 
 # Averages are calculated at the 5 minute interval for all of the days here. 
-
+```
 ## Imputing missing values
-
-NA_steps <- sum(is.na(as.character(activity$steps)))
-NA_interval <- sum(is.na(as.character(activity$interval)))
-NA_date <- sum(is.na(as.character(activity$date)))
-NA_total <- sum(!complete.cases(activity))
+```{r}
+null_steps <- sum(is.na(as.character(activity$steps)))
+null_interval <- sum(is.na(as.character(activity$interval)))
+null_date <- sum(is.na(as.character(activity$date)))
+null_total <- sum(!complete.cases(activity))
 StepsAverage <- aggregate(steps ~ interval, activity, mean)
-fillNA <- numeric()
+fill_nulls <- numeric()
 
 for (i in 1:nrow(activity)) {
   obs <- activity[i, ]
@@ -59,19 +70,19 @@ for (i in 1:nrow(activity)) {
   } else {
     steps <- obs$steps
   }
-  fillNA <- c(fillNA, steps)
+  fill_nulls <- c(fill_nulls, steps)
 }
-data2 <- activity
-data2$steps <- fillNA
-
+data_clone <- activity
+data_clone$steps <- fill_nulls
+```
 # Uses mean imputation for NA values to have filled in. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
-
-steps_day2 <- aggregate(steps ~ date, data2, sum)
+```{r}
+steps_day2 <- aggregate(steps ~ date, data_clone, sum)
 hist(steps_day2$steps, main = paste("Total Steps Taken Each Day"), col="red", xlab="Number of Steps")
-hist(steps_day$steps, main = paste("Total of Steps Taken Each Day"), col="grey", xlab="Number of Steps", add=T)
-legend("topleft", c("New dataset", "Dataset"), col=c("red", "grey"), lwd=10)
+hist(steps_day$steps, main = paste("Total of Steps Taken Each Day"), col="blue", xlab="Number of Steps", add=T)
+legend("topleft", c("New dataset", "Dataset"), col=c("red", "blue"), lwd=10)
 mean(steps_day2$steps)
 median(steps_day2$steps)
 median1 <- median(steps_day$steps)
@@ -90,7 +101,7 @@ wkday <- function(dat_val) {
 activity$Day <- as.factor(sapply(activity$date, wkday))
 report_activity <- aggregate(steps~interval+Day,activity,mean)
 g<- ggplot(report_activity, aes(interval,steps))
-g <-g+ geom_line(stat = 'identity', aes(color='Day')) + facet_grid(Day~.)
+g <-g+ geom_line(stat = 'identity') + facet_grid(Day~.)
 g+ labs(x= '5 mins Interval', y = "Average of Steps") + ggtitle("Weekday versus Weekend")
-
+```
 # Yes, there appear to be differences between the weekday and the weekend. Weekend activities appear to be more consistent, where the weekday has more volatility and greater variance. 
