@@ -1,6 +1,7 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
+title: 'Reproducible Research: Peer Assessment 1'
+output:
+  pdf_document: default
   html_document:
     keep_md: true
 ---
@@ -8,18 +9,79 @@ output:
 
 ## Loading and preprocessing the data
 
+library(knitr)
+library(tinytex)
 
+if (!file.exists('activity.csv')) {
+  
+  unzip('./activity.zip', exdir = '.');
+}
+activity <- read.csv('activity.csv');
+summary(activity)
+activity$date <- as.Date(activity$date, format = "%Y-%m-%d")
+activity_no_NA <- activity[with(activity, { !(is.na(steps)) } ), ]
+steps_day <- aggregate(steps ~ date, activity_no_NA, sum)
+hist(steps_day$steps, col="grey", xlab = "Number of Steps", main= "Total Steps Taken Each Day")
 
 ## What is mean total number of steps taken per day?
 
-
+mean(steps_day$steps)
+median(steps_day$steps)
 
 ## What is the average daily activity pattern?
 
-
+avg_steps_interval <- aggregate(steps ~ interval, activity, mean)
+plot(avg_steps_interval$interval, avg_steps_interval$steps, type='l', col=1, main="Average Steps per Day by Interval", xlab="Time Intervals", ylab="Average number of steps")
+interval_max <- which.max(avg_steps_interval$steps)
+interval_max_i <- avg_steps_interval[interval_max, ]$interval
+interval_max_s <- round(avg_steps_interval[interval_max, ]$step)
 
 ## Imputing missing values
 
+NA_steps <- sum(is.na(as.character(activity$steps)))
+NA_interval <- sum(is.na(as.character(activity$interval)))
+NA_date <- sum(is.na(as.character(activity$date)))
+NA_total <- sum(!complete.cases(activity))
+StepsAverage <- aggregate(steps ~ interval, activity, mean)
+fillNA <- numeric()
 
+for (i in 1:nrow(activity)) {
+  obs <- activity[i, ]
+  if (is.na(obs$steps)) {
+    steps <- subset(StepsAverage, interval == obs$interval)$steps
+  } else {
+    steps <- obs$steps
+  }
+  fillNA <- c(fillNA, steps)
+}
+data2 <- activity
+data2$steps <- fillNA
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+steps_day2 <- aggregate(steps ~ date, data2, sum)
+hist(steps_day2$steps, main = paste("Total Steps Taken Each Day"), col="red", xlab="Number of Steps")
+hist(steps_day$steps, main = paste("Total of Steps Taken Each Day"), col="grey", xlab="Number of Steps", add=T)
+legend("topleft", c("New dataset", "Dataset"), col=c("red", "grey"), lwd=10)
+mean(steps_day2$steps)
+median(steps_day2$steps)
+median1 <- median(steps_day$steps)
+median2 <- median(steps_day2$steps)
+median2 - median1
+wkday <- function(dat_val) {
+  wd <- weekdays(as.Date(dat_val, '%Y-%m-%d'))
+  if  (!(wd == 'Saturday' || wd == 'Sunday')) {
+    x <- 'Weekday'
+  } 
+  else {
+    x <- 'Weekend'
+  }
+  x
+}
+activity$Day <- as.factor(sapply(activity$date, wkday))
+report_activity <- aggregate(steps~interval+Day,activity,mean)
+g<- ggplot(report_activity, aes(interval,steps))
+g <-g+ geom_line(stat = 'identity', aes(color='Day')) + facet_grid(Day~.)
+g+ labs(x= '5 mins Interval', y = "Average of Steps") + ggtitle("Weekday versus Weekend")
+
+
