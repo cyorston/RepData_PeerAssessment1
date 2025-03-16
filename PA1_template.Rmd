@@ -10,6 +10,7 @@ output:
 ## Loading and preprocessing the data
 
 library(knitr)
+library(ggplot2)
 library(tinytex)
 
 if (!file.exists('activity.csv')) {
@@ -23,10 +24,14 @@ activity_no_NA <- activity[with(activity, { !(is.na(steps)) } ), ]
 steps_day <- aggregate(steps ~ date, activity_no_NA, sum)
 hist(steps_day$steps, col="grey", xlab = "Number of Steps", main= "Total Steps Taken Each Day")
 
+# Imported libraries and assessed NA values, file is unzipped
+
 ## What is mean total number of steps taken per day?
 
 mean(steps_day$steps)
 median(steps_day$steps)
+
+# Mean value is determined here. 
 
 ## What is the average daily activity pattern?
 
@@ -35,6 +40,8 @@ plot(avg_steps_interval$interval, avg_steps_interval$steps, type='l', col=1, mai
 interval_max <- which.max(avg_steps_interval$steps)
 interval_max_i <- avg_steps_interval[interval_max, ]$interval
 interval_max_s <- round(avg_steps_interval[interval_max, ]$step)
+
+# Averages are calculated at the 5 minute interval for all of the days here. 
 
 ## Imputing missing values
 
@@ -56,6 +63,8 @@ for (i in 1:nrow(activity)) {
 }
 data2 <- activity
 data2$steps <- fillNA
+
+# Uses mean imputation for NA values to have filled in. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
@@ -84,4 +93,4 @@ g<- ggplot(report_activity, aes(interval,steps))
 g <-g+ geom_line(stat = 'identity', aes(color='Day')) + facet_grid(Day~.)
 g+ labs(x= '5 mins Interval', y = "Average of Steps") + ggtitle("Weekday versus Weekend")
 
-
+# Yes, there appear to be differences between the weekday and the weekend. Weekend activities appear to be more consistent, where the weekday has more volatility and greater variance. 
